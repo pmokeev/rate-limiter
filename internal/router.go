@@ -4,15 +4,16 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type Router struct {
-	service Service
+	service *Service
 }
 
-func NewRouter() *Router {
-	return &Router{}
+func NewRouter(service *Service) *Router {
+	return &Router{service: service}
 }
 
 func (r *Router) RateMiddleware() gin.HandlerFunc {
@@ -23,26 +24,47 @@ func (r *Router) RateMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		status, err := r.service.HaveAccess(context, IPv4)
+		access, err := r.service.CheckAccess(context, IPv4)
 		if err != nil {
 			context.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		if !status {
+		if !access.isAccess {
+			context.Request.Header.Add("X-Ratelimit-Retry-After", access.xRetryAfter.String())
 			context.AbortWithStatus(http.StatusTooManyRequests)
 			return
 		}
+
+		context.Request.Header.Add("X-Ratelimit-Remaining", strconv.Itoa(int(access.xRemaining)))
+		context.Request.Header.Add("X-Ratelimit-Limit", strconv.Itoa(int(access.xLimit)))
 
 		context.Next()
 	}
 }
 
 func (r *Router) GetData(context *gin.Context) {
-	context.JSON(http.StatusOK, nil)
+	data, err := r.service.GetData()
+	if err != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	context.JSON(http.StatusOK, map[string]string{
+		"message": data,
+	})
 }
 
 func (r *Router) ClearRate(context *gin.Context) {
-	context.JSON(http.StatusOK, nil)
+	IPv4 := context.Request.Header.Get("X-Forwarded-For")
+	err := r.service.ClearRate(context, IPv4)
+	if err != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	context.JSON(http.StatusOK, map[string]string{
+		"status": "ok",
+	})
 }
 
 func (r *Router) InitRouter() *gin.Engine {
@@ -54,10 +76,7 @@ func (r *Router) InitRouter() *gin.Engine {
 		AllowHeaders:     []string{"Origin"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return origin == "https://github.com"
-		},
-		MaxAge: 12 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	api := router.Group("/api")

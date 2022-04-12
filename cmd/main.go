@@ -20,7 +20,8 @@ func init() {
 }
 
 func main() {
-	router := internal.NewRouter()
+	service := internal.NewService()
+	router := internal.NewRouter(service)
 	server := internal.NewServer()
 
 	go func() {
