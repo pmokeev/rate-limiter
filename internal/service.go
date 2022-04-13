@@ -31,8 +31,7 @@ func NewService() *Service {
 func (s *Service) CheckAccess(context context.Context, IPv4 string) (*middlewareAccess, error) {
 	_, IPNet, _ := net.ParseCIDR(IPv4 + "/" + strconv.Itoa(int(ipSubnet)))
 
-	// TODO: is it really necessary?
-	_, err := s.redisClient.Get(context, IPNet.String()).Result()
+	count, err := s.redisClient.Incr(context, IPNet.String()).Result()
 	if err == redis.Nil {
 		if err := s.redisClient.Set(context, IPNet.String(), 1, timeToLive).Err(); err != nil {
 			return NewMiddlewareAccess(0, requestCount, 0, false), err
@@ -42,7 +41,6 @@ func (s *Service) CheckAccess(context context.Context, IPv4 string) (*middleware
 	} else if err != nil {
 		return NewMiddlewareAccess(0, requestCount, 0, false), err
 	} else {
-		count, err := s.redisClient.Incr(context, IPNet.String()).Result()
 		if err != nil {
 			return NewMiddlewareAccess(0, requestCount, 0, false), err
 		}
@@ -73,7 +71,8 @@ func (s *Service) GetData() (string, error) {
 }
 
 func (s *Service) ClearRate(context context.Context, IPv4 string) error {
-	_, err := s.redisClient.Del(context, IPv4).Result()
+	_, IPNet, _ := net.ParseCIDR(IPv4 + "/" + strconv.Itoa(int(ipSubnet)))
+	_, err := s.redisClient.Del(context, IPNet.String()).Result()
 
 	return err
 }
