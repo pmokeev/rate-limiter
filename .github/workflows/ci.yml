@@ -18,16 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: go get -u golang.org/x/lint/golint
-
       - name: Run build
         run: go build ./cmd/main.go
-
-      - name: Run vet & lint
-        run: |
-          go vet ./...
-          golint .
 
       - name: Run tests
         run: go test ./...
