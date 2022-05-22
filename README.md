@@ -9,7 +9,7 @@ It is allowed to make 100 requests from one subnet per 2 minutes. Subnet: `/24 (
     <img src="https://i.ibb.co/Vv8PGmn/Untitled-Diagram-drawio.png"> 
 </p>
 
-## Installation
+# Installation
 
 The application is packaged in [docker](https://www.docker.com/) containers. You must also have docker-compose installed in order to run the application. Command to run the application:
 
@@ -24,4 +24,4 @@ make
 - Docker
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
+This project is licensed under the MIT - see the [LICENSE](https://choosealicense.com/licenses/mit/) file for details.

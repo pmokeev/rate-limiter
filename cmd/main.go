@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/pmokeev/rate-limiter/tree/main/internal"
-	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/pmokeev/rate-limiter/tree/main/internal"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -20,7 +21,8 @@ func init() {
 }
 
 func main() {
-	service := internal.NewService()
+	redisAddr := "redis:6379"
+	service := internal.NewService(redisAddr)
 	router := internal.NewRouter(service)
 	server := internal.NewServer()
 

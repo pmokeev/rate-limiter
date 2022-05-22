@@ -3,11 +3,12 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-redis/redis/v8"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 const (
@@ -20,9 +21,9 @@ type Service struct {
 	redisClient *redis.Client
 }
 
-func NewService() *Service {
+func NewService(addr string) *Service {
 	return &Service{redisClient: redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
+		Addr:     addr,
 		Password: "",
 		DB:       0,
 	})}
@@ -41,10 +42,6 @@ func (s *Service) CheckAccess(context context.Context, IPv4 string) (*middleware
 	} else if err != nil {
 		return NewMiddlewareAccess(0, requestCount, 0, false), err
 	} else {
-		if err != nil {
-			return NewMiddlewareAccess(0, requestCount, 0, false), err
-		}
-
 		ttl, err := s.redisClient.TTL(context, IPNet.String()).Result()
 		if err != nil {
 			return NewMiddlewareAccess(0, requestCount, 0, false), err
