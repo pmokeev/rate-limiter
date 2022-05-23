@@ -32,5 +32,25 @@ func TestSingleRate(t *testing.T) {
 
 	router.InitRouter().ServeHTTP(recorder, request)
 
-	assert.Equal(t, 200, recorder.Code)
+	assert.Equal(t, http.StatusOK, recorder.Code)
+}
+
+func TestOneHundredRequests(t *testing.T) {
+	mockAddr := CreateMockAddr()
+	if mockAddr == "" {
+		t.Fatal("Error while creating mock redis address")
+	}
+
+	service := NewService(mockAddr)
+	router := NewRouter(service)
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/send", nil)
+	request.Header.Add("X-Forwarded-For", "10.10.10.10")
+
+	for i := 0; i < 100; i++ {
+		router.InitRouter().ServeHTTP(recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+	}
 }
