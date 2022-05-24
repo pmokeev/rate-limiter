@@ -30,14 +30,15 @@ func (r *Router) RateMiddleware() gin.HandlerFunc {
 			context.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
+
+		context.Writer.Header().Set("X-Ratelimit-Remaining", strconv.Itoa(int(access.xRemaining)))
+		context.Writer.Header().Set("X-Ratelimit-Limit", strconv.Itoa(int(access.xLimit)))
+
 		if !access.isAccess {
 			context.Writer.Header().Set("X-Ratelimit-Retry-After", access.xRetryAfter.String())
 			context.AbortWithStatus(http.StatusTooManyRequests)
 			return
 		}
-
-		context.Writer.Header().Set("X-Ratelimit-Remaining", strconv.Itoa(int(access.xRemaining)))
-		context.Writer.Header().Set("X-Ratelimit-Limit", strconv.Itoa(int(access.xLimit)))
 
 		context.Next()
 	}
